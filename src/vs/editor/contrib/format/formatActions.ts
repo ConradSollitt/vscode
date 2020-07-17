@@ -23,6 +23,7 @@ import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/c
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
+import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { EditorOption } from 'vs/editor/common/config/editorOptions';
 import { Progress } from 'vs/platform/progress/common/progress';
@@ -208,7 +209,9 @@ class FormatOnPaste implements IEditorContribution {
 
 class FormatDocumentAction extends EditorAction {
 
-	constructor() {
+	constructor(
+		@INotificationService private readonly _notificationService: INotificationService
+	) {
 		super({
 			id: 'editor.action.formatDocument',
 			label: nls.localize('formatDocument.label', "Format Document"),
@@ -230,8 +233,13 @@ class FormatDocumentAction extends EditorAction {
 
 	async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
 		if (editor.hasModel()) {
+			// TODO - Dev Testing - Conrad
+			// https://github.com/microsoft/vscode/issues/102718
+			//this._notificationService.info(nls.localize('formatDocument.status', "Formatting Document..."));
+			const messageHandle = this._notificationService.notify({ severity: Severity.Info, message: nls.localize('formatDocument.status', "Formatting Document...") });
 			const instaService = accessor.get(IInstantiationService);
 			await instaService.invokeFunction(formatDocumentWithSelectedProvider, editor, FormattingMode.Explicit, Progress.None, CancellationToken.None);
+			messageHandle.close();
 		}
 	}
 }
